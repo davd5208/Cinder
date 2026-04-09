@@ -1,0 +1,22 @@
+{
+    "manifest_version": 3,
+    "name": "KILL YOUTUBE SCROLL",
+    "version": "1.0",
+    "description": "Zablokuje YouTube po nastavenom pocte otvorenych videi.",
+    "permissions": [
+        "storage"
+    ],
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "*://*.youtube.com/*"
+            ],
+            "js": [
+                "content.js"
+            ]
+        }
+    ]
+}

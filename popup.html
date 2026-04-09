@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube limit</title>
+    <style>
+        :root {
+            color-scheme: light;
+        }
+
+        body {
+            margin: 0;
+            min-width: 280px;
+            font-family: Arial, sans-serif;
+            background: #111827;
+            color: #f9fafb;
+        }
+
+        .panel {
+            padding: 18px;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 18px;
+        }
+
+        p {
+            margin: 0 0 16px;
+            color: #d1d5db;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 12px;
+            border: 1px solid #374151;
+            border-radius: 10px;
+            font-size: 15px;
+            background: #f9fafb;
+            color: #111827;
+        }
+
+        .stats {
+            margin: 14px 0 16px;
+            padding: 12px;
+            border-radius: 12px;
+            background: #1f2937;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            border: none;
+            border-radius: 999px;
+            padding: 11px 14px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        button[type="submit"] {
+            background: #f97316;
+            color: #111827;
+        }
+
+        button[type="button"] {
+            background: #374151;
+            color: #f9fafb;
+        }
+
+        #status {
+            min-height: 18px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: #fdba74;
+        }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h1>YouTube limit</h1>
+        <p>Nastav, po kolkych otvorenych videach alebo Shorts sa ma dalsie video zablokovat.</p>
+
+        <form id="settings-form">
+            <label for="video-limit">Pocet videi</label>
+            <input id="video-limit" name="video-limit" type="number" min="1" step="1" required>
+
+            <div class="stats">
+                Aktualne zapocitane videa: <strong id="watched-count">0</strong>
+            </div>
+
+            <div class="actions">
+                <button type="submit">Ulozit</button>
+                <button type="button" id="reset-count">Reset</button>
+            </div>
+        </form>
+
+        <div id="status"></div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

@@ -6,6 +6,21 @@ const STORAGE_KEYS = {
 const SESSION_KEYS = {
     lastCountedVideo: "ytLimitLastCountedVideo"
 };
+const ELEMENT_IDS = {
+    overlay: "yt-limit-block-overlay",
+    homeButton: "yt-limit-home-button",
+    resetButton: "yt-limit-reset-button",
+    summary: "yt-limit-summary",
+    watchedValue: "yt-limit-watched-value",
+    limitValue: "yt-limit-limit-value",
+    remainingValue: "yt-limit-remaining-value",
+    progressText: "yt-limit-progress-text",
+    progressFill: "yt-limit-progress-fill"
+};
+const COUNT_DELAY_MS = 1200;
+
+let pendingSyncTimeout = null;
+let pendingUrl = null;
 
 const storageGet = (keys) =>
     new Promise((resolve) => {
@@ -16,6 +31,16 @@ const storageSet = (values) =>
     new Promise((resolve) => {
         chrome.storage.local.set(values, resolve);
     });
+
+const normalizeLimit = (value) => {
+    const parsedValue = Number(value);
+    return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : DEFAULT_VIDEO_LIMIT;
+};
+
+const normalizeCount = (value) => {
+    const parsedValue = Number(value);
+    return Number.isFinite(parsedValue) && parsedValue >= 0 ? parsedValue : 0;
+};
 
 const isVideoPage = (url) => {
     return url.includes("youtube.com/watch") || url.includes("youtube.com/shorts/");
@@ -37,48 +62,142 @@ const getVideoIdentifier = () => {
     return null;
 };
 
-const renderBlockScreen = async (watchedCount, videoLimit) => {
-    if (document.getElementById("yt-limit-block-overlay")) {
-        return;
-    }
-
-    document.body.innerHTML = `
-        <div id="yt-limit-block-overlay" style="display:flex; flex-direction:column; gap:16px; min-height:100vh; align-items:center; justify-content:center; background:#0f0f0f; color:white; font-family:Arial, sans-serif; text-align:center; padding:24px; box-sizing:border-box;">
-            <h1 style="font-size:3rem; margin:0;">STOP!</h1>
-            <p style="font-size:1.4rem; margin:0;">Dosiahol si limit ${videoLimit} videi.</p>
-            <p style="font-size:1rem; margin:0; color:#cfcfcf;">Aktualne mas zapocitanych ${watchedCount} otvorenych videi alebo Shorts.</p>
-            <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:8px;">
-                <button id="yt-limit-home-button" style="padding:14px 24px; border:none; border-radius:999px; cursor:pointer; font-weight:700;">
-                    Spat na YouTube domov
-                </button>
-                <button id="yt-limit-reset-button" style="padding:14px 24px; border:1px solid #666; border-radius:999px; background:transparent; color:white; cursor:pointer; font-weight:700;">
-                    Vynulovat pocitadlo
-                </button>
-            </div>
-        </div>
-    `;
-
-    document.getElementById("yt-limit-home-button")?.addEventListener("click", () => {
-        window.location.href = "https://www.youtube.com/";
-    });
-
-    document.getElementById("yt-limit-reset-button")?.addEventListener("click", async () => {
-        sessionStorage.removeItem(SESSION_KEYS.lastCountedVideo);
-        await storageSet({ [STORAGE_KEYS.watchedCount]: 0 });
-        window.location.href = "https://www.youtube.com/";
+const pauseActiveMedia = () => {
+    document.querySelectorAll("video, audio").forEach((mediaElement) => {
+        if (typeof mediaElement.pause === "function") {
+            mediaElement.pause();
+        }
     });
 };
 
-const syncVideoState = async () => {
+const removeBlockScreen = () => {
+    document.getElementById(ELEMENT_IDS.overlay)?.remove();
+    document.documentElement.classList.remove("yt-limit-locked");
+    document.body?.classList.remove("yt-limit-locked");
+};
+
+const createBlockScreen = () => {
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = `
+        <div id="${ELEMENT_IDS.overlay}" aria-modal="true" role="dialog">
+            <section class="yt-limit-panel">
+                <header class="yt-limit-header">
+                    <div class="yt-limit-badge">
+                        <span class="yt-limit-badge-mark" aria-hidden="true"></span>
+                        <span>Cinder</span>
+                    </div>
+
+                    <div class="yt-limit-copy">
+                        <p class="yt-limit-kicker">Limit aktivny</p>
+                        <h1 class="yt-limit-title">Dobra chvila na pauzu.</h1>
+                        <p id="${ELEMENT_IDS.summary}" class="yt-limit-summary"></p>
+                    </div>
+                </header>
+
+                <section class="yt-limit-stats" aria-label="Prehlad limitu">
+                    <article class="yt-limit-stat">
+                        <span class="yt-limit-stat-label">Pozrete videa</span>
+                        <strong id="${ELEMENT_IDS.watchedValue}" class="yt-limit-stat-value">0</strong>
+                    </article>
+
+                    <article class="yt-limit-stat">
+                        <span class="yt-limit-stat-label">Tvoj limit</span>
+                        <strong id="${ELEMENT_IDS.limitValue}" class="yt-limit-stat-value">0</strong>
+                    </article>
+
+                    <article class="yt-limit-stat">
+                        <span class="yt-limit-stat-label">Nad limitom</span>
+                        <strong id="${ELEMENT_IDS.remainingValue}" class="yt-limit-stat-value">0</strong>
+                    </article>
+                </section>
+
+                <section class="yt-limit-progress" aria-label="Progres limitu">
+                    <div class="yt-limit-progress-meta">
+                        <span>Stav limitu</span>
+                        <span id="${ELEMENT_IDS.progressText}">0 / 0</span>
+                    </div>
+
+                    <div class="yt-limit-progress-track" aria-hidden="true">
+                        <div id="${ELEMENT_IDS.progressFill}" class="yt-limit-progress-fill"></div>
+                    </div>
+                </section>
+
+                <p class="yt-limit-note">
+                    Feed pocka. Mozes sa vratit na domovsku alebo resetovat pocitadlo, ak chces zacat odznova.
+                </p>
+
+                <div class="yt-limit-actions">
+                    <button id="${ELEMENT_IDS.homeButton}" class="yt-limit-button yt-limit-button-primary" type="button">
+                        <svg viewBox="0 0 20 20" aria-hidden="true">
+                            <path d="M3 9.5L10 4L17 9.5V16H12.5V11.5H7.5V16H3V9.5Z" fill="currentColor"></path>
+                        </svg>
+                        <span>Na domovsku</span>
+                    </button>
+
+                    <button id="${ELEMENT_IDS.resetButton}" class="yt-limit-button yt-limit-button-secondary" type="button">
+                        <svg viewBox="0 0 20 20" aria-hidden="true">
+                            <path d="M4.5 5.5V10H9" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                            <path d="M5.2 10A5.5 5.5 0 1 0 10 4.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                        </svg>
+                        <span>Resetovat pocitadlo</span>
+                    </button>
+                </div>
+            </section>
+        </div>
+    `;
+
+    const overlayElement = wrapper.firstElementChild;
+    document.body.appendChild(overlayElement);
+
+    document.documentElement.classList.add("yt-limit-locked");
+    document.body.classList.add("yt-limit-locked");
+
+    document.getElementById(ELEMENT_IDS.homeButton)?.addEventListener("click", () => {
+        window.location.href = "https://www.youtube.com/";
+    });
+
+    document.getElementById(ELEMENT_IDS.resetButton)?.addEventListener("click", async () => {
+        await storageSet({ [STORAGE_KEYS.watchedCount]: 0 });
+    });
+
+    return overlayElement;
+};
+
+const renderBlockScreen = (watchedCount, videoLimit) => {
+    const overlayElement =
+        document.getElementById(ELEMENT_IDS.overlay) || createBlockScreen();
+    const remainingOverLimit = Math.max(watchedCount - videoLimit, 0);
+    const progressRatio = Math.min(watchedCount / videoLimit, 1);
+
+    document.getElementById(ELEMENT_IDS.summary).textContent =
+        `Cinder napocital ${watchedCount} videi alebo Shorts. Tvoj limit je ${videoLimit}, preto je dalsie sledovanie zatial pozastavene.`;
+    document.getElementById(ELEMENT_IDS.watchedValue).textContent = String(watchedCount);
+    document.getElementById(ELEMENT_IDS.limitValue).textContent = String(videoLimit);
+    document.getElementById(ELEMENT_IDS.remainingValue).textContent = String(remainingOverLimit);
+    document.getElementById(ELEMENT_IDS.progressText).textContent = `${watchedCount} / ${videoLimit}`;
+    document.getElementById(ELEMENT_IDS.progressFill).style.width = `${progressRatio * 100}%`;
+
+    pauseActiveMedia();
+
+    return overlayElement;
+};
+
+const syncVideoState = async (expectedUrl = window.location.href) => {
+    if (expectedUrl !== window.location.href) {
+        return;
+    }
+
     const currentUrl = window.location.href;
 
     if (!isVideoPage(currentUrl)) {
+        removeBlockScreen();
         return;
     }
 
     const currentVideoIdentifier = getVideoIdentifier();
 
     if (!currentVideoIdentifier) {
+        removeBlockScreen();
         return;
     }
 
@@ -87,8 +206,8 @@ const syncVideoState = async () => {
         STORAGE_KEYS.watchedCount
     ]);
 
-    const videoLimit = Number(storedData[STORAGE_KEYS.videoLimit]) || DEFAULT_VIDEO_LIMIT;
-    let watchedCount = Number(storedData[STORAGE_KEYS.watchedCount]) || 0;
+    const videoLimit = normalizeLimit(storedData[STORAGE_KEYS.videoLimit]);
+    let watchedCount = normalizeCount(storedData[STORAGE_KEYS.watchedCount]);
     const lastCountedVideo = sessionStorage.getItem(SESSION_KEYS.lastCountedVideo);
 
     if (lastCountedVideo !== currentVideoIdentifier) {
@@ -97,9 +216,32 @@ const syncVideoState = async () => {
         await storageSet({ [STORAGE_KEYS.watchedCount]: watchedCount });
     }
 
-    if (watchedCount >= videoLimit) {
-        await renderBlockScreen(watchedCount, videoLimit);
+    if (watchedCount > videoLimit) {
+        renderBlockScreen(watchedCount, videoLimit);
+        return;
     }
+
+    removeBlockScreen();
+};
+
+const scheduleVideoStateSync = () => {
+    const currentUrl = window.location.href;
+
+    pendingUrl = currentUrl;
+
+    if (pendingSyncTimeout) {
+        window.clearTimeout(pendingSyncTimeout);
+    }
+
+    pendingSyncTimeout = window.setTimeout(() => {
+        pendingSyncTimeout = null;
+
+        if (pendingUrl !== window.location.href) {
+            return;
+        }
+
+        void syncVideoState(currentUrl);
+    }, COUNT_DELAY_MS);
 };
 
 chrome.storage.local.get(STORAGE_KEYS.videoLimit, (result) => {
@@ -108,8 +250,18 @@ chrome.storage.local.get(STORAGE_KEYS.videoLimit, (result) => {
     }
 });
 
-window.addEventListener("yt-navigate-finish", () => {
-    void syncVideoState();
+chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== "local") {
+        return;
+    }
+
+    if (changes[STORAGE_KEYS.videoLimit] || changes[STORAGE_KEYS.watchedCount]) {
+        void syncVideoState();
+    }
 });
 
-void syncVideoState();
+window.addEventListener("yt-navigate-finish", () => {
+    scheduleVideoStateSync();
+});
+
+scheduleVideoStateSync();

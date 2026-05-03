@@ -1,0 +1,226 @@
+html.yt-limit-locked,
+body.yt-limit-locked {
+    overflow: hidden !important;
+}
+
+#yt-limit-block-overlay,
+#yt-limit-block-overlay * {
+    box-sizing: border-box;
+}
+
+#yt-limit-block-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    color: #f3f5f7;
+    font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    background:
+        linear-gradient(135deg, rgba(244, 111, 67, 0.18), transparent 38%),
+        linear-gradient(180deg, rgba(12, 14, 18, 0.92), rgba(12, 14, 18, 0.98));
+    backdrop-filter: blur(20px);
+}
+
+.yt-limit-panel {
+    position: relative;
+    width: min(100%, 680px);
+    display: grid;
+    gap: 20px;
+    padding: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(24, 27, 33, 0.97), rgba(16, 18, 23, 0.99));
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+
+.yt-limit-panel::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #f46f43 0%, #ffb35c 60%, #76d6c5 100%);
+}
+
+.yt-limit-header {
+    display: grid;
+    gap: 14px;
+}
+
+.yt-limit-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #d6dce3;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.yt-limit-badge-mark {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #f46f43 0%, #ffb35c 100%);
+    box-shadow: 0 0 12px rgba(244, 111, 67, 0.45);
+}
+
+.yt-limit-copy {
+    display: grid;
+    gap: 8px;
+}
+
+.yt-limit-kicker {
+    margin: 0;
+    color: #ffb35c;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.yt-limit-title {
+    margin: 0;
+    font-size: clamp(30px, 5vw, 46px);
+    line-height: 1.02;
+}
+
+.yt-limit-summary,
+.yt-limit-note {
+    margin: 0;
+    max-width: 52ch;
+    color: #d6dce3;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.yt-limit-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.yt-limit-stat {
+    display: grid;
+    gap: 10px;
+    min-height: 112px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.04));
+}
+
+.yt-limit-stat-label {
+    color: #9ea7b4;
+    font-size: 13px;
+}
+
+.yt-limit-stat-value {
+    font-size: 32px;
+    line-height: 1;
+}
+
+.yt-limit-progress {
+    display: grid;
+    gap: 10px;
+}
+
+.yt-limit-progress-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: #c3cad4;
+    font-size: 13px;
+}
+
+.yt-limit-progress-track {
+    overflow: hidden;
+    height: 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.yt-limit-progress-fill {
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #f46f43 0%, #ffb35c 60%, #76d6c5 100%);
+}
+
+.yt-limit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.yt-limit-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 0 18px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        transform 140ms ease,
+        box-shadow 140ms ease,
+        border-color 140ms ease,
+        background-color 140ms ease;
+}
+
+.yt-limit-button:hover {
+    transform: translateY(-1px);
+}
+
+.yt-limit-button svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+}
+
+.yt-limit-button-primary {
+    background: linear-gradient(135deg, #f46f43, #ffb35c);
+    color: #241006;
+    box-shadow: 0 16px 36px rgba(244, 111, 67, 0.28);
+}
+
+.yt-limit-button-secondary {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: #f3f5f7;
+}
+
+.yt-limit-button:focus-visible {
+    outline: 2px solid rgba(77, 212, 198, 0.72);
+    outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+    #yt-limit-block-overlay {
+        padding: 16px;
+    }
+
+    .yt-limit-panel {
+        padding: 22px;
+    }
+
+    .yt-limit-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .yt-limit-button {
+        width: 100%;
+    }
+}

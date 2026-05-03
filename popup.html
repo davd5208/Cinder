@@ -3,116 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube limit</title>
-    <style>
-        :root {
-            color-scheme: light;
-        }
-
-        body {
-            margin: 0;
-            min-width: 280px;
-            font-family: Arial, sans-serif;
-            background: #111827;
-            color: #f9fafb;
-        }
-
-        .panel {
-            padding: 18px;
-        }
-
-        h1 {
-            margin: 0 0 8px;
-            font-size: 18px;
-        }
-
-        p {
-            margin: 0 0 16px;
-            color: #d1d5db;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        input {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 10px 12px;
-            border: 1px solid #374151;
-            border-radius: 10px;
-            font-size: 15px;
-            background: #f9fafb;
-            color: #111827;
-        }
-
-        .stats {
-            margin: 14px 0 16px;
-            padding: 12px;
-            border-radius: 12px;
-            background: #1f2937;
-            font-size: 14px;
-        }
-
-        .actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        button {
-            flex: 1;
-            border: none;
-            border-radius: 999px;
-            padding: 11px 14px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        button[type="submit"] {
-            background: #f97316;
-            color: #111827;
-        }
-
-        button[type="button"] {
-            background: #374151;
-            color: #f9fafb;
-        }
-
-        #status {
-            min-height: 18px;
-            margin-top: 12px;
-            font-size: 13px;
-            color: #fdba74;
-        }
-    </style>
+    <title>Cinder</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="panel">
-        <h1>YouTube limit</h1>
-        <p>Nastav, po kolkych otvorenych videach alebo Shorts sa ma dalsie video zablokovat.</p>
+    <main class="popup-app">
+        <section class="hero">
+            <div class="hero-brand" aria-hidden="true">
+                <img src="logo.svg" alt="" class="hero-brand-icon">
+            </div>
 
-        <form id="settings-form">
-            <label for="video-limit">Pocet videi</label>
-            <input id="video-limit" name="video-limit" type="number" min="1" step="1" required>
+            <div class="hero-copy">
+                <p class="eyebrow">YouTube focus helper</p>
+                <h1>Cinder</h1>
+                <p class="hero-text">
+                    Nastav si zdravy limit sledovania. Cinder ti postrazi pocet otvorenych videi
+                    a jemne ta zastavi, ked je cas dat si pauzu.
+                </p>
+            </div>
+        </section>
 
-            <div class="stats">
-                Aktualne zapocitane videa: <strong id="watched-count">0</strong>
+        <section class="overview">
+            <div class="overview-head">
+                <span id="state-pill" class="state-pill">V pohode</span>
+                <span id="session-caption" class="session-caption">Dnesna seria</span>
+            </div>
+
+            <div class="metric-grid">
+                <article class="metric-tile">
+                    <span class="metric-label">Pozrete videa</span>
+                    <strong id="watched-count" class="metric-value">0</strong>
+                </article>
+
+                <article class="metric-tile">
+                    <span class="metric-label">Este mozes</span>
+                    <strong id="remaining-count" class="metric-value">0</strong>
+                </article>
+            </div>
+
+            <div class="progress-group">
+                <div class="progress-meta">
+                    <span>Stav limitu</span>
+                    <span id="progress-text">0 / 5</span>
+                </div>
+
+                <div class="progress-track" aria-hidden="true">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+            </div>
+        </section>
+
+        <form id="settings-form" class="settings-form">
+            <div class="field-head">
+                <label for="video-limit">Denny limit videi</label>
+                <span class="field-hint">Jednoducho zmenis kedykolvek</span>
+            </div>
+
+            <div class="input-shell">
+                <input id="video-limit" name="video-limit" type="number" min="1" step="1" required inputmode="numeric">
+                <span class="input-suffix">videi</span>
+            </div>
+
+            <div class="preset-group" role="group" aria-label="Rychle nastavenia">
+                <button type="button" class="preset-button" data-limit="3">3</button>
+                <button type="button" class="preset-button" data-limit="5">5</button>
+                <button type="button" class="preset-button" data-limit="8">8</button>
+                <button type="button" class="preset-button" data-limit="12">12</button>
             </div>
 
             <div class="actions">
-                <button type="submit">Ulozit</button>
-                <button type="button" id="reset-count">Reset</button>
+                <button type="submit" class="primary-button">
+                    <svg viewBox="0 0 20 20" aria-hidden="true">
+                        <path d="M4 10.5L8 14.5L16 6.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                    </svg>
+                    <span>Ulozit</span>
+                </button>
+
+                <button type="button" id="reset-count" class="secondary-button">
+                    <svg viewBox="0 0 20 20" aria-hidden="true">
+                        <path d="M4.5 5.5V10H9" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                        <path d="M5.2 10A5.5 5.5 0 1 0 10 4.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                    </svg>
+                    <span>Reset</span>
+                </button>
             </div>
         </form>
 
-        <div id="status"></div>
-    </div>
+        <p id="status" class="status-text" aria-live="polite"></p>
+    </main>
 
     <script src="popup.js"></script>
 </body>

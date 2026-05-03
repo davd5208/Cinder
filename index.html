@@ -1,10 +1,730 @@
-<html lang="en">
+<!DOCTYPE html>
+<html lang="sk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta name="description" content="Cinder je priatelske Chrome rozsirenie, ktore pomaha nastavit denny limit sledovania YouTube videi a Shorts.">
+    <title>Cinder | YouTube focus helper</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #101216;
+            --bg-soft: #171b21;
+            --panel: rgba(27, 31, 38, 0.9);
+            --panel-strong: #202630;
+            --line: rgba(255, 255, 255, 0.13);
+            --text: #fff8f2;
+            --muted: #bac3cd;
+            --accent: #f46f43;
+            --accent-strong: #ffb35c;
+            --accent-cool: #76d6c5;
+            --success: #7bdca4;
+            --shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+            font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            min-width: 320px;
+            background:
+                linear-gradient(135deg, rgba(244, 111, 67, 0.15), transparent 34%),
+                linear-gradient(180deg, #171a20 0%, var(--bg) 48%, #0d0f13 100%);
+            color: var(--text);
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        img {
+            display: block;
+            max-width: 100%;
+        }
+
+        .site-shell {
+            overflow: hidden;
+        }
+
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(16, 18, 22, 0.78);
+            backdrop-filter: blur(16px);
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            width: min(1120px, calc(100% - 32px));
+            min-height: 72px;
+            margin: 0 auto;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+        }
+
+        .brand-mark,
+        .hero-mark {
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            border-radius: 8px;
+            background: #0f0d0f;
+            box-shadow: 0 12px 28px rgba(244, 111, 67, 0.2);
+        }
+
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .nav-links a:hover {
+            color: var(--text);
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 46px;
+            padding: 0 18px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 800;
+            transition: transform 150ms ease, border-color 150ms ease, background-color 150ms ease;
+        }
+
+        .button:hover {
+            transform: translateY(-1px);
+        }
+
+        .button-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            color: #241006;
+            box-shadow: 0 16px 34px rgba(255, 107, 74, 0.26);
+        }
+
+        .button-secondary {
+            border-color: var(--line);
+            background: rgba(255, 255, 255, 0.055);
+            color: var(--text);
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.02fr) minmax(320px, 0.78fr);
+            gap: clamp(32px, 7vw, 82px);
+            align-items: center;
+            width: min(1120px, calc(100% - 32px));
+            min-height: calc(100vh - 72px);
+            margin: 0 auto;
+            padding: clamp(42px, 8vw, 88px) 0;
+        }
+
+        .hero-copy {
+            display: grid;
+            gap: 24px;
+        }
+
+        .hero-title-row {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .hero-mark {
+            width: 74px;
+            height: 74px;
+            flex: 0 0 74px;
+        }
+
+        .eyebrow {
+            margin: 0;
+            color: var(--accent-strong);
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            margin: 0;
+        }
+
+        h1 {
+            font-size: clamp(48px, 8vw, 92px);
+            line-height: 0.94;
+            letter-spacing: 0;
+        }
+
+        .hero-lead {
+            max-width: 690px;
+            color: #d6dce2;
+            font-size: clamp(18px, 2.1vw, 24px);
+            line-height: 1.48;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .hero-points {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            max-width: 740px;
+        }
+
+        .point {
+            display: grid;
+            gap: 6px;
+            min-height: 92px;
+            padding: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.045);
+        }
+
+        .point strong {
+            font-size: 15px;
+        }
+
+        .point span {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .product-preview {
+            position: relative;
+            display: grid;
+            gap: 18px;
+        }
+
+        .phone-frame {
+            display: grid;
+            gap: 16px;
+            width: min(100%, 380px);
+            margin-left: auto;
+            padding: 18px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: linear-gradient(180deg, rgba(35, 40, 49, 0.96), rgba(19, 22, 28, 0.98));
+            box-shadow: var(--shadow);
+        }
+
+        .preview-hero {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .preview-logo {
+            width: 48px;
+            height: 48px;
+            overflow: hidden;
+            border-radius: 8px;
+            background: #0f0d0f;
+        }
+
+        .preview-copy {
+            display: grid;
+            gap: 6px;
+        }
+
+        .preview-copy span {
+            color: var(--accent-strong);
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .preview-copy strong {
+            font-size: 26px;
+        }
+
+        .preview-copy p,
+        .preview-label,
+        .preview-meta,
+        .install-step p,
+        .feature p {
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        .preview-panel {
+            display: grid;
+            gap: 16px;
+            padding: 16px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: linear-gradient(180deg, rgba(24, 27, 33, 0.98), rgba(30, 34, 41, 0.98));
+        }
+
+        .preview-head,
+        .preview-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 0 10px;
+            border-radius: 8px;
+            background: rgba(123, 220, 164, 0.14);
+            color: var(--success);
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .preview-tile {
+            display: grid;
+            gap: 8px;
+            min-height: 86px;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .preview-label,
+        .preview-meta {
+            font-size: 12px;
+        }
+
+        .preview-value {
+            font-size: 34px;
+            line-height: 1;
+        }
+
+        .progress-track {
+            height: 12px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .progress-fill {
+            width: 60%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--accent), var(--accent-strong), var(--accent-cool));
+        }
+
+        .limit-control {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+            min-height: 52px;
+            padding: 0 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            background: rgba(12, 14, 18, 0.92);
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .limit-control span {
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .preview-button {
+            display: grid;
+            place-items: center;
+            min-height: 42px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            color: #241006;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .section {
+            width: min(1120px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: clamp(52px, 8vw, 96px) 0;
+        }
+
+        .section-head {
+            display: grid;
+            gap: 12px;
+            max-width: 710px;
+            margin-bottom: 28px;
+        }
+
+        h2 {
+            font-size: clamp(30px, 5vw, 52px);
+            line-height: 1.04;
+            letter-spacing: 0;
+        }
+
+        .section-head p {
+            color: var(--muted);
+            font-size: 18px;
+            line-height: 1.58;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .feature,
+        .install-step {
+            display: grid;
+            gap: 14px;
+            padding: 20px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.045);
+        }
+
+        .feature-icon,
+        .step-number {
+            display: grid;
+            place-items: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            background: rgba(118, 214, 197, 0.13);
+            color: var(--accent-cool);
+            font-weight: 900;
+        }
+
+        .feature h3,
+        .install-step h3 {
+            font-size: 19px;
+            line-height: 1.2;
+        }
+
+        .install-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .cta-band {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 24px;
+            align-items: center;
+            padding: 28px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background:
+                linear-gradient(135deg, rgba(244, 111, 67, 0.16), transparent 46%),
+                var(--panel-strong);
+            box-shadow: var(--shadow);
+        }
+
+        .cta-band p {
+            margin-top: 8px;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        .site-footer {
+            width: min(1120px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 28px 0 42px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        @media (max-width: 860px) {
+            .nav {
+                min-height: 64px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                grid-template-columns: 1fr;
+                min-height: auto;
+            }
+
+            .phone-frame {
+                margin: 0;
+            }
+
+            .hero-points,
+            .features,
+            .install-grid,
+            .cta-band {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-band {
+                align-items: stretch;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .hero-title-row {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .hero-mark {
+                width: 62px;
+                height: 62px;
+                flex-basis: 62px;
+            }
+
+            .hero-actions {
+                display: grid;
+            }
+
+            .button {
+                width: 100%;
+            }
+
+            .preview-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-    <p>Hello World</p>
+    <div class="site-shell">
+        <header class="site-header">
+            <nav class="nav" aria-label="Hlavna navigacia">
+                <a class="brand" href="#top" aria-label="Cinder domov">
+                    <span class="brand-mark" aria-hidden="true">
+                        <img src="logo.svg" alt="">
+                    </span>
+                    <span>Cinder</span>
+                </a>
+
+                <div class="nav-links">
+                    <a href="#funkcie">Funkcie</a>
+                    <a href="#instalacia">Instalacia</a>
+                    <a href="#stiahnut">Stiahnut</a>
+                </div>
+            </nav>
+        </header>
+
+        <main id="top">
+            <section class="hero" aria-labelledby="hero-title">
+                <div class="hero-copy">
+                    <div class="hero-title-row">
+                        <span class="hero-mark" aria-hidden="true">
+                            <img src="logo.svg" alt="">
+                        </span>
+
+                        <div>
+                            <p class="eyebrow">YouTube focus helper</p>
+                            <h1 id="hero-title">Cinder</h1>
+                        </div>
+                    </div>
+
+                    <p class="hero-lead">
+                        Priatelske Chrome rozsirenie, ktore ti pomoze nastavit denny limit pre YouTube videa a Shorts.
+                        Ked limit prekrocis, Cinder video zastavi a posle ta na pauzu.
+                    </p>
+
+                    <div class="hero-actions" aria-label="Rychle odkazy">
+                        <a class="button button-primary" href="#instalacia">Ako nainstalovat</a>
+                        <a class="button button-secondary" href="#funkcie">Pozriet funkcie</a>
+                    </div>
+
+                    <div class="hero-points" aria-label="Hlavne vyhody">
+                        <div class="point">
+                            <strong>Denny limit</strong>
+                            <span>Nastavis si pocet videi, ktory ti dnes dava zmysel.</span>
+                        </div>
+                        <div class="point">
+                            <strong>Jemne stopnutie</strong>
+                            <span>Po prekroceni limitu sa prehravanie pozastavi.</span>
+                        </div>
+                        <div class="point">
+                            <strong>Jednoduche ovladanie</strong>
+                            <span>Popup ukaze progres, zvysok limitu aj reset pocitadla.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="product-preview" aria-label="Ukazka rozsirenia">
+                    <div class="phone-frame">
+                        <div class="preview-hero">
+                            <div class="preview-logo" aria-hidden="true">
+                                <img src="logo.svg" alt="">
+                            </div>
+
+                            <div class="preview-copy">
+                                <span>YouTube focus helper</span>
+                                <strong>Cinder</strong>
+                                <p>Nastav si zdravy limit sledovania.</p>
+                            </div>
+                        </div>
+
+                        <div class="preview-panel">
+                            <div class="preview-head">
+                                <span class="pill">V pohode</span>
+                                <span class="preview-label">Dnesna seria</span>
+                            </div>
+
+                            <div class="preview-grid">
+                                <div class="preview-tile">
+                                    <span class="preview-label">Pozrete videa</span>
+                                    <strong class="preview-value">3</strong>
+                                </div>
+
+                                <div class="preview-tile">
+                                    <span class="preview-label">Este mozes</span>
+                                    <strong class="preview-value">2</strong>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="preview-meta">
+                                    <span>Stav limitu</span>
+                                    <span>3 / 5</span>
+                                </div>
+                                <div class="progress-track" aria-hidden="true">
+                                    <div class="progress-fill"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="limit-control" aria-label="Denny limit videi">
+                            <strong>5</strong>
+                            <span>videi</span>
+                        </div>
+
+                        <div class="preview-button">Ulozit</div>
+                    </div>
+                </aside>
+            </section>
+
+            <section id="funkcie" class="section" aria-labelledby="features-title">
+                <div class="section-head">
+                    <p class="eyebrow">Funkcie</p>
+                    <h2 id="features-title">Menej nekonecneho scrollovania, viac kontroly.</h2>
+                    <p>
+                        Cinder sleduje otvorene YouTube videa a Shorts, pocita ich pocas dna a pri prekroceni limitu zobrazi blokovaciu obrazovku.
+                    </p>
+                </div>
+
+                <div class="features">
+                    <article class="feature">
+                        <span class="feature-icon" aria-hidden="true">01</span>
+                        <h3>Pocitanie videi</h3>
+                        <p>Rozsirenie rozpozna stranky typu watch aj Shorts a zapocita kazde nove video iba raz.</p>
+                    </article>
+
+                    <article class="feature">
+                        <span class="feature-icon" aria-hidden="true">02</span>
+                        <h3>Limit priamo v popupe</h3>
+                        <p>Denny limit vies zmenit jednym cislom alebo rychlym presetom.</p>
+                    </article>
+
+                    <article class="feature">
+                        <span class="feature-icon" aria-hidden="true">03</span>
+                        <h3>Blokovanie po limite</h3>
+                        <p>Po prekroceni limitu Cinder pozastavi prehravanie a ponukne navrat na domovsku alebo reset.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section id="instalacia" class="section" aria-labelledby="install-title">
+                <div class="section-head">
+                    <p class="eyebrow">Instalacia</p>
+                    <h2 id="install-title">Spustenie v Chrome trva iba chvilu.</h2>
+                    <p>
+                        Kym rozsirenie nie je vo Web Store, vies ho nacitat lokalne cez Developer mode.
+                    </p>
+                </div>
+
+                <div class="install-grid">
+                    <article class="install-step">
+                        <span class="step-number">1</span>
+                        <h3>Stiahni repozitar</h3>
+                        <p>Otvor GitHub projekt, stiahni ZIP alebo naklonuj repozitar do pocitaca.</p>
+                    </article>
+
+                    <article class="install-step">
+                        <span class="step-number">2</span>
+                        <h3>Zapni Developer mode</h3>
+                        <p>V Chrome otvor chrome://extensions a zapni prepinac Developer mode.</p>
+                    </article>
+
+                    <article class="install-step">
+                        <span class="step-number">3</span>
+                        <h3>Nacitaj extension</h3>
+                        <p>Klikni Load unpacked a vyber priecinok s Cinder subormi.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section id="stiahnut" class="section" aria-labelledby="download-title">
+                <div class="cta-band">
+                    <div>
+                        <p class="eyebrow">Cinder 1.1.0</p>
+                        <h2 id="download-title">Pripravene pre GitHub Pages.</h2>
+                        <p>
+                            Tato stranka bezi bez buildu. Staci ju publikovat z vetvy, ktoru pouzivas pre GitHub Pages.
+                        </p>
+                    </div>
+
+                    <a class="button button-primary" href="manifest.json">Pozriet manifest</a>
+                </div>
+            </section>
+        </main>
+
+        <footer class="site-footer">
+            <span>Cinder. Priatelsky YouTube limit pre sustredenejsi den.</span>
+        </footer>
+    </div>
 </body>
 </html>

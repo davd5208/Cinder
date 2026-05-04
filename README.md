@@ -2,7 +2,8 @@
 Extension that will limit the number of videos that you can watch in youtube
 
 #Privacy Policy
-Information we track
+
+#Information we track
 
 - URL adresses
 - Number of watched videos

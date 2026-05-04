@@ -481,6 +481,22 @@
             font-size: 14px;
         }
 
+        .site-footer a {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .site-footer a:hover {
+            color: var(--accent-strong);
+        }
+
+        .site-footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px 18px;
+            margin-top: 10px;
+        }
+
         @media (max-width: 860px) {
             .nav {
                 min-height: 64px;
@@ -729,6 +745,10 @@
 
         <footer class="site-footer">
             <span>Cinder. Priatelsky YouTube limit pre sustredenejsi den.</span>
+            <div class="site-footer-links" aria-label="Pravne odkazy">
+                <a href="privacy-policy.html">Privacy Policy</a>
+                <a href="terms-of-use.html">Terms of Use</a>
+            </div>
         </footer>
     </div>
 </body>
